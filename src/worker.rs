@@ -50,23 +50,26 @@ impl Worker {
     pub fn run(&self) {
         println!("[Server][Worker#{}] Started.", self.id);
         loop {
-            match self.receiver.lock() {
+            let stream = match self.receiver.lock() {
                 Ok(receiver) => match receiver.recv() {
                     Ok(command) => match command {
-                        Command::Stream(stream) => match self.process(stream) {
-                            Ok(_) => (),
-                            Err(error) => println!("[Server][Worler#{}][Warning] Client processiong error: \"{}\".", self.id, error),
-                        },
+                        Command::Stream(stream) => stream,
                         Command::Terminate => break,
                     },
                     Err(error) => {
                         println!("[Server][Worler#{}][Warning] Unable to receive data: \"{}\".", self.id, error);
+                        continue;
                     },
                 },
                 Err(error) => {
                     println!("[Server][Worler#{}][Error] Unable to lock receiver: \"{}\".", self.id, error);
                     break;
                 },
+            };
+
+            match self.process(stream) {
+                Ok(_) => (),
+                Err(error) => println!("[Server][Worler#{}][Warning] Client processiong error: \"{}\".", self.id, error),
             }
         }
         println!("[Server][Worker#{}] Stopped.", self.id);

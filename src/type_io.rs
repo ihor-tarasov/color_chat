@@ -50,6 +50,18 @@ macro_rules! impl_rw {
 
 impl_rw!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
 
+impl<R: ReadType<u8>> ReadType<bool> for R {
+    fn read_type(&mut self) -> io::Result<bool> {
+        Ok(self.read_type()? != 0)
+    }
+}
+
+impl<W: WriteType<u8> + WriteType<u8>> WriteType<bool> for W {
+    fn write_type(&mut self, t: bool) -> io::Result<()> {
+        self.write_type(if t { 1 } else { 0 })
+    }
+}
+
 impl<R: ReadType<u32> + ReadType<u8>> ReadType<String> for R {
     fn read_type(&mut self) -> io::Result<String> {
         let length: u32 = self.read_type()?;
